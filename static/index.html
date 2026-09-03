@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Briefing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    :root {
+      --bg: #0D1B2A;
+      --card: #1A2B3C;
+      --card2: #1E3347;
+      --text: #E8EFF7;
+      --muted: #7A96B0;
+      --dim: #3A5570;
+      --accent: #00C9A7;
+      --accent-dim: rgba(0,201,167,0.1);
+      --accent-border: rgba(0,201,167,0.3);
+      --amber: #F5C518;
+      --amber-dim: rgba(245,197,24,0.08);
+      --red: #FF5E5B;
+      --border: rgba(255,255,255,0.07);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px 60px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    .eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-size: clamp(24px, 4vw, 38px);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    h1 span { color: var(--accent); }
+
+    .container {
+      width: 100%;
+      max-width: 680px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Lead card */
+    .lead-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .lead-card-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .lead-name {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    .tag.hot { background: rgba(245,197,24,0.12); border: 1px solid rgba(245,197,24,0.3); color: var(--amber); }
+    .tag.cold { background: rgba(74,106,133,0.2); border: 1px solid var(--border); color: var(--muted); }
+    .tag.warm { background: var(--accent-dim); border: 1px solid var(--accent-border); color: var(--accent); }
+
+    .lead-fields {
+      padding: 16px 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 3px; }
+
+    .field-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+
+    .field-value {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .no-lead {
+      padding: 40px 24px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    /* Conversation */
+    .conversation-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .convo-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--dim);
+      flex-shrink: 0;
+      transition: background 0.3s;
+    }
+    .status-dot.listening { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+    .status-dot.speaking { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+    .status-dot.processing { background: var(--muted); animation: pulse 1s infinite; }
+
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+
+    #status-label { color: var(--muted); }
+
+    .messages {
+      padding: 16px;
+      min-height: 180px;
+      max-height: 320px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .msg {
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      line-height: 1.55;
+      max-width: 88%;
+    }
+
+    .msg.agent {
+      background: var(--accent-dim);
+      border: 1px solid var(--accent-border);
+      color: var(--text);
+      align-self: flex-start;
+    }
+
+    .msg.user {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      align-self: flex-end;
+    }
+
+    .msg.partial {
+      background: transparent;
+      border: 1px dashed var(--border);
+      color: var(--muted);
+      align-self: flex-end;
+      font-style: italic;
+    }
+
+    .msg.system {
+      background: var(--amber-dim);
+      border: 1px solid rgba(245,197,24,0.15);
+      color: var(--amber);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      align-self: center;
+      text-align: center;
+    }
+
+    .msg-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      opacity: 0.6;
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 16px;
+      border-radius: 10px;
+      border: none;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .btn-start {
+      background: var(--accent);
+      color: #0D1B2A;
+    }
+
+    .btn-stop {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .btn-start:hover:not(:disabled) { opacity: 0.88; }
+    .btn-stop:hover:not(:disabled) { border-color: var(--red); color: var(--red); }
+
+    /* Waveform viz */
+    .waveform {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      height: 28px;
+      padding: 4px 0;
+    }
+
+    .bar {
+      width: 3px;
+      border-radius: 2px;
+      background: var(--accent);
+      opacity: 0.4;
+      height: 4px;
+      transition: height 0.08s;
+    }
+
+    footer {
+      margin-top: 40px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      color: var(--dim);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Real Estate · Voice Agent</div>
+  <h1>Agent <span>Briefing</span></h1>
+</header>
+
+<div class="container">
+
+  <!-- Lead Card -->
+  <div class="lead-card" id="lead-card">
+    <div class="no-lead">Loading upcoming showing...</div>
+  </div>
+
+  <!-- Conversation -->
+  <div class="conversation-card">
+    <div class="convo-header">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-label">Ready</span>
+      <div class="waveform" id="waveform" style="margin-left:auto;display:none">
+        <div class="bar" id="b1"></div><div class="bar" id="b2"></div>
+        <div class="bar" id="b3"></div><div class="bar" id="b4"></div>
+        <div class="bar" id="b5"></div><div class="bar" id="b6"></div>
+        <div class="bar" id="b7"></div>
+      </div>
+    </div>
+    <div class="messages" id="messages">
+      <div class="msg system">Start briefing to connect with the voice agent</div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="btn btn-start" id="btn-start" onclick="startSession()">Start Briefing</button>
+    <button class="btn btn-stop" id="btn-stop" onclick="stopSession()" disabled>End Call</button>
+  </div>
+
+</div>
+
+<footer>AssemblyAI · Claude · Web Speech · Airtable</footer>
+
+<script>
+  let ws = null;
+  let audioContext = null;
+  let mediaStream = null;
+  let scriptProcessor = null;
+  let partialMsgEl = null;
+  let agentSpeaking = false;
+  let agentLastText = '';
+  let waveformInterval = null;
+  const bars = [1,2,3,4,5,6,7].map(i => document.getElementById('b'+i));
+
+  // ── Load lead info on page load ──────────────────────────────────────────
+  async function loadLead() {
+    try {
+      const res = await fetch('/api/lead');
+      const lead = await res.json();
+      if (lead.error) {
+        document.getElementById('lead-card').innerHTML =
+          `<div class="no-lead">${lead.error}</div>`;
+        return;
+      }
+      renderLeadCard(lead);
+    } catch (e) {
+      document.getElementById('lead-card').innerHTML =
+        `<div class="no-lead">Could not load lead data</div>`;
+    }
+  }
+
+  function renderLeadCard(lead) {
+    const tagClass = lead.tag === 'HOT' ? 'hot' : lead.tag === 'WARM' ? 'warm' : 'cold';
+    document.getElementById('lead-card').innerHTML = `
+      <div class="lead-card-header">
+        <div class="lead-name">${lead.name}</div>
+        ${lead.tag ? `<div class="tag ${tagClass}">${lead.tag}</div>` : ''}
+      </div>
+      <div class="lead-fields">
+        <div class="field">
+          <div class="field-label">Property Interest</div>
+          <div class="field-value">${lead.property_interest || '—'}</div>
+        </div>
+        <div class="field">
+          <div class="field-label">Budget</div>
+          <div class="field-value">${lead.budget || '—'}</div>
+        </div>
+        <div class="field">
+          <div class="field-label">Urgency</div>
+          <div class="field-value">${lead.urgency || '—'}</div>
+        </div>
+        <div class="field">
+          <div class="field-label">Viewing Date</div>
+          <div class="field-value">${lead.viewing_date || '—'}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  // ── Session control ───────────────────────────────────────────────────────
+  async function startSession() {
+    document.getElementById('btn-start').disabled = true;
+    document.getElementById('btn-stop').disabled = false;
+    setStatus('Connecting...', '');
+
+    try {
+      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (e) {
+      addMsg('system', 'Microphone access denied.');
+      resetControls();
+      return;
+    }
+
+    const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+    ws = new WebSocket(`${protocol}://${location.host}/ws`);
+    ws.binaryType = 'arraybuffer';
+
+    ws.onopen = () => {
+      setStatus('Listening', 'listening');
+      startMic();
+    };
+
+    ws.onmessage = (e) => {
+      if (e.data instanceof ArrayBuffer) {
+        playAudio(e.data);
+      } else {
+        const msg = JSON.parse(e.data);
+        handleMessage(msg);
+      }
+    };
+
+    ws.onclose = () => {
+      setStatus('Call ended', '');
+      stopMic();
+      resetControls();
+    };
+
+    ws.onerror = () => {
+      addMsg('system', 'Connection error. Check server is running.');
+      stopSession();
+    };
+  }
+
+  function stopSession() {
+    if (ws) { ws.send(JSON.stringify({ type: 'stop' })); ws.close(); ws = null; }
+    stopMic();
+    resetControls();
+    setStatus('Ready', '');
+  }
+
+  function handleMessage(msg) {
+    if (msg.type === 'partial') {
+      showPartial(msg.text);
+    } else if (msg.type === 'transcript') {
+      commitPartial();
+      addMsg('user', msg.text);
+    } else if (msg.type === 'agent_speaking') {
+      agentSpeaking = true;
+      agentLastText = msg.text;
+      setStatus('Agent speaking', 'speaking');
+      // text shown in playAudio() so it syncs with audio start; fallback below
+    } else if (msg.type === 'agent_done') {
+      if (msg.tts_failed) {
+        addMsg('agent', agentLastText);
+        speakBrowser(agentLastText);
+      }
+      agentSpeaking = false;
+      setStatus('Listening', 'listening');
+    } else if (msg.type === 'processing') {
+      setStatus('Thinking...', 'processing');
+    } else if (msg.type === 'error') {
+      addMsg('system', msg.message);
+    }
+  }
+
+  // ── Mic capture → send PCM16 to server ───────────────────────────────────
+  function startMic() {
+    audioContext = new AudioContext({ sampleRate: 16000 });
+    const source = audioContext.createMediaStreamSource(mediaStream);
+    scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+
+    scriptProcessor.onaudioprocess = (e) => {
+      if (!ws || ws.readyState !== WebSocket.OPEN || agentSpeaking) return;
+      const float32 = e.inputBuffer.getChannelData(0);
+      const int16 = float32ToInt16(float32);
+      ws.send(int16.buffer);
+      animateBars(float32);
+    };
+
+    source.connect(scriptProcessor);
+    scriptProcessor.connect(audioContext.destination);
+    document.getElementById('waveform').style.display = 'flex';
+  }
+
+  function stopMic() {
+    if (scriptProcessor) { scriptProcessor.disconnect(); scriptProcessor = null; }
+    if (audioContext) { audioContext.close(); audioContext = null; }
+    if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+    document.getElementById('waveform').style.display = 'none';
+  }
+
+  function float32ToInt16(float32) {
+    const int16 = new Int16Array(float32.length);
+    for (let i = 0; i < float32.length; i++) {
+      const s = Math.max(-1, Math.min(1, float32[i]));
+      int16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    }
+    return int16;
+  }
+
+  // ── Browser TTS fallback (Web Speech API) ────────────────────────────────
+  function speakBrowser(text) {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utt = new SpeechSynthesisUtterance(text);
+    utt.rate = 1.05;
+    utt.pitch = 1.0;
+    window.speechSynthesis.speak(utt);
+  }
+
+  // ── Audio playback (ElevenLabs MP3 from server — takes priority) ──────────
+  const audioQueue = [];
+  let playingAudio = false;
+
+  function playAudio(arrayBuffer) {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    addMsg('agent', agentLastText); // show text exactly when audio starts
+    const blob = new Blob([arrayBuffer], { type: 'audio/mpeg' });
+    const url = URL.createObjectURL(blob);
+    audioQueue.push(url);
+    if (!playingAudio) drainQueue();
+  }
+
+  function drainQueue() {
+    if (!audioQueue.length) { playingAudio = false; return; }
+    playingAudio = true;
+    const url = audioQueue.shift();
+    const audio = new Audio(url);
+    audio.onended = () => { URL.revokeObjectURL(url); drainQueue(); };
+    audio.play().catch(() => drainQueue());
+  }
+
+  // ── UI helpers ────────────────────────────────────────────────────────────
+  function setStatus(label, state) {
+    document.getElementById('status-label').textContent = label;
+    const dot = document.getElementById('status-dot');
+    dot.className = 'status-dot' + (state ? ' ' + state : '');
+  }
+
+  function addMsg(type, text) {
+    const el = document.createElement('div');
+    el.className = `msg ${type}`;
+    if (type === 'agent') {
+      el.innerHTML = `<div class="msg-label">Agent</div>${text}`;
+    } else if (type === 'user') {
+      el.innerHTML = `<div class="msg-label">You</div>${text}`;
+    } else {
+      el.textContent = text;
+    }
+    document.getElementById('messages').appendChild(el);
+    el.scrollIntoView({ behavior: 'smooth' });
+    return el;
+  }
+
+  function showPartial(text) {
+    if (!partialMsgEl) {
+      partialMsgEl = document.createElement('div');
+      partialMsgEl.className = 'msg partial';
+      document.getElementById('messages').appendChild(partialMsgEl);
+    }
+    partialMsgEl.textContent = text;
+    partialMsgEl.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function commitPartial() {
+    if (partialMsgEl) {
+      partialMsgEl.remove();
+      partialMsgEl = null;
+    }
+  }
+
+  function resetControls() {
+    document.getElementById('btn-start').disabled = false;
+    document.getElementById('btn-stop').disabled = true;
+  }
+
+  function animateBars(float32) {
+    const rms = Math.sqrt(float32.reduce((s, v) => s + v * v, 0) / float32.length);
+    const level = Math.min(rms * 8, 1);
+    bars.forEach(b => {
+      const h = 4 + Math.random() * level * 22;
+      b.style.height = `${h}px`;
+      b.style.opacity = 0.3 + level * 0.7;
+    });
+  }
+
+  loadLead();
+</script>
+</body>
+</html>
