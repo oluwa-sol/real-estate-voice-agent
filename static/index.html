@@ -373,11 +373,12 @@
     const list = document.getElementById('lead-list');
     list.innerHTML = leads.map((lead, i) => {
       const tagClass = lead.tag === 'HOT' ? 'hot' : lead.tag === 'WARM' ? 'warm' : 'cold';
-      const meta = [lead.property_interest, lead.budget].filter(Boolean).join(' · ') || lead.status || '';
+      const meta = [lead.property_interest, lead.budget].filter(Boolean).join(' · ') || '';
+      const statusBadge = lead.status ? `<span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:2px 7px;border-radius:3px;background:rgba(0,201,167,0.1);border:1px solid rgba(0,201,167,0.25);color:var(--accent);margin-left:8px">${lead.status}</span>` : '';
       return `<div class="lead-row" data-index="${i}" onclick="selectLead(${i})">
         <div class="lead-row-info">
           <div class="lead-name">${lead.name}</div>
-          <div class="lead-meta">${meta}</div>
+          <div class="lead-meta">${meta}${statusBadge}</div>
         </div>
         ${lead.tag ? `<div class="tag ${tagClass}">${lead.tag}</div>` : ''}
       </div>`;
