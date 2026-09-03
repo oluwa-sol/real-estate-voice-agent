@@ -6,7 +6,7 @@ A real-time voice briefing assistant for real estate agents. Built for the Assem
 
 Real estate agents juggle multiple leads across WhatsApp, Instagram, and web forms. Before a showing, they need to quickly recall who they're meeting, what the lead wants, their budget, and how to approach them.
 
-This voice agent solves that. The agent opens the app, selects an upcoming lead, clicks Start Briefing, and has a natural voice conversation to get up to speed in under two minutes — hands-free, right before walking through the door.
+This voice agent solves that. The agent opens the app, selects an upcoming lead, clicks Start Briefing, and has a natural voice conversation to get up to speed in under two minutes. Hands-free, right before walking through the door.
 
 **Live demo:** https://web-production-99b82.up.railway.app
 
@@ -28,7 +28,7 @@ Claude answers questions from the lead's Airtable profile
 ElevenLabs speaks the response back
 ```
 
-The voice agent is the final layer on top of an existing 5-workflow real estate CRM — not a standalone prototype.
+The voice agent is the final layer on top of an existing 5-workflow real estate CRM, not a standalone prototype.
 
 ## Tech Stack
 
