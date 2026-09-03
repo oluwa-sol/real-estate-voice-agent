@@ -68,26 +68,57 @@
       gap: 16px;
     }
 
-    /* Lead card */
-    .lead-card {
+    /* Lead list */
+    .leads-section {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 14px;
       overflow: hidden;
     }
 
-    .lead-card-header {
-      padding: 20px 24px 16px;
+    .leads-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .lead-row {
+      padding: 14px 20px;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      gap: 14px;
+      cursor: pointer;
+      transition: background 0.15s;
     }
+
+    .lead-row:last-child { border-bottom: none; }
+    .lead-row:hover { background: var(--card2); }
+
+    .lead-row.selected {
+      background: var(--accent-dim);
+      border-left: 3px solid var(--accent);
+    }
+
+    .lead-row-info { flex: 1; min-width: 0; }
 
     .lead-name {
       font-family: 'Bricolage Grotesque', sans-serif;
-      font-size: 22px;
+      font-size: 16px;
       font-weight: 700;
+      margin-bottom: 3px;
+    }
+
+    .lead-meta {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .tag {
@@ -97,34 +128,12 @@
       padding: 4px 10px;
       border-radius: 4px;
       font-weight: 500;
+      flex-shrink: 0;
     }
 
     .tag.hot { background: rgba(245,197,24,0.12); border: 1px solid rgba(245,197,24,0.3); color: var(--amber); }
     .tag.cold { background: rgba(74,106,133,0.2); border: 1px solid var(--border); color: var(--muted); }
     .tag.warm { background: var(--accent-dim); border: 1px solid var(--accent-border); color: var(--accent); }
-
-    .lead-fields {
-      padding: 16px 24px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-    }
-
-    .field { display: flex; flex-direction: column; gap: 3px; }
-
-    .field-label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 9.5px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--dim);
-    }
-
-    .field-value {
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--text);
-    }
 
     .no-lead {
       padding: 40px 24px;
@@ -299,9 +308,10 @@
 
 <div class="container">
 
-  <!-- Lead Card -->
-  <div class="lead-card" id="lead-card">
-    <div class="no-lead">Loading upcoming showing...</div>
+  <!-- Lead List -->
+  <div class="leads-section" id="leads-section">
+    <div class="leads-header">Upcoming Leads — select to brief</div>
+    <div id="lead-list"><div class="no-lead">Loading leads...</div></div>
   </div>
 
   <!-- Conversation -->
@@ -339,56 +349,56 @@
   let partialMsgEl = null;
   let agentSpeaking = false;
   let agentLastText = '';
-  let waveformInterval = null;
+  let selectedLead = null;
   const bars = [1,2,3,4,5,6,7].map(i => document.getElementById('b'+i));
 
-  // ── Load lead info on page load ──────────────────────────────────────────
-  async function loadLead() {
+  // ── Load leads on page load ───────────────────────────────────────────────
+  async function loadLeads() {
     try {
-      const res = await fetch('/api/lead');
-      const lead = await res.json();
-      if (lead.error) {
-        document.getElementById('lead-card').innerHTML =
-          `<div class="no-lead">${lead.error}</div>`;
+      const res = await fetch('/api/leads');
+      const leads = await res.json();
+      if (!leads.length) {
+        document.getElementById('lead-list').innerHTML =
+          '<div class="no-lead">No leads found in Airtable</div>';
         return;
       }
-      renderLeadCard(lead);
+      renderLeadList(leads);
     } catch (e) {
-      document.getElementById('lead-card').innerHTML =
-        `<div class="no-lead">Could not load lead data</div>`;
+      document.getElementById('lead-list').innerHTML =
+        '<div class="no-lead">Could not load leads</div>';
     }
   }
 
-  function renderLeadCard(lead) {
-    const tagClass = lead.tag === 'HOT' ? 'hot' : lead.tag === 'WARM' ? 'warm' : 'cold';
-    document.getElementById('lead-card').innerHTML = `
-      <div class="lead-card-header">
-        <div class="lead-name">${lead.name}</div>
+  function renderLeadList(leads) {
+    const list = document.getElementById('lead-list');
+    list.innerHTML = leads.map((lead, i) => {
+      const tagClass = lead.tag === 'HOT' ? 'hot' : lead.tag === 'WARM' ? 'warm' : 'cold';
+      const meta = [lead.property_interest, lead.budget].filter(Boolean).join(' · ') || lead.status || '';
+      return `<div class="lead-row" data-index="${i}" onclick="selectLead(${i})">
+        <div class="lead-row-info">
+          <div class="lead-name">${lead.name}</div>
+          <div class="lead-meta">${meta}</div>
+        </div>
         ${lead.tag ? `<div class="tag ${tagClass}">${lead.tag}</div>` : ''}
-      </div>
-      <div class="lead-fields">
-        <div class="field">
-          <div class="field-label">Property Interest</div>
-          <div class="field-value">${lead.property_interest || '—'}</div>
-        </div>
-        <div class="field">
-          <div class="field-label">Budget</div>
-          <div class="field-value">${lead.budget || '—'}</div>
-        </div>
-        <div class="field">
-          <div class="field-label">Urgency</div>
-          <div class="field-value">${lead.urgency || '—'}</div>
-        </div>
-        <div class="field">
-          <div class="field-label">Viewing Date</div>
-          <div class="field-value">${lead.viewing_date || '—'}</div>
-        </div>
-      </div>
-    `;
+      </div>`;
+    }).join('');
+    list._leads = leads;
+    // Auto-select first lead
+    selectLead(0);
+  }
+
+  function selectLead(index) {
+    const list = document.getElementById('lead-list');
+    selectedLead = list._leads[index];
+    list.querySelectorAll('.lead-row').forEach((el, i) => {
+      el.classList.toggle('selected', i === index);
+    });
+    document.getElementById('btn-start').disabled = false;
   }
 
   // ── Session control ───────────────────────────────────────────────────────
   async function startSession() {
+    if (!selectedLead) { addMsg('system', 'Select a lead first.'); return; }
     document.getElementById('btn-start').disabled = true;
     document.getElementById('btn-stop').disabled = false;
     setStatus('Connecting...', '');
@@ -406,6 +416,8 @@
     ws.binaryType = 'arraybuffer';
 
     ws.onopen = () => {
+      // Send selected lead as first message before audio starts
+      ws.send(JSON.stringify({ lead: selectedLead }));
       setStatus('Listening', 'listening');
       startMic();
     };
@@ -584,7 +596,7 @@
     });
   }
 
-  loadLead();
+  loadLeads();
 </script>
 </body>
 </html>

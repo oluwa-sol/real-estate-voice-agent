@@ -8,6 +8,22 @@ BASE_URL = f"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}"
 HEADERS = lambda: {"Authorization": f"Bearer {os.getenv('AIRTABLE_TOKEN')}"}
 
 
+async def get_leads(max_records: int = 6) -> list:
+    """Return all leads sorted by score descending, for the selection list."""
+    async with httpx.AsyncClient(timeout=15) as client:
+        resp = await client.get(
+            f"{BASE_URL}/Leads",
+            headers=HEADERS(),
+            params={
+                "sort[0][field]": "Score",
+                "sort[0][direction]": "desc",
+                "maxRecords": max_records,
+            },
+        )
+        data = resp.json()
+        return [_clean(r["fields"], r["id"]) for r in data.get("records", [])]
+
+
 async def get_next_showing() -> dict | None:
     """
     Returns the next upcoming lead with Status = 'Viewing Booked'.
@@ -71,8 +87,9 @@ async def get_next_showing() -> dict | None:
     return None
 
 
-def _clean(fields: dict) -> dict:
+def _clean(fields: dict, record_id: str = "") -> dict:
     return {
+        "id": record_id,
         "name": fields.get("Name", "Unknown"),
         "contact": fields.get("Contact", ""),
         "phone": fields.get("Phone", ""),

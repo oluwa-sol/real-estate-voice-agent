@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from agent import build_greeting, build_system_prompt, get_claude_response, text_to_speech
-from airtable_client import get_next_showing
+from airtable_client import get_leads, get_next_showing
 
 # v3 streaming endpoint — auth goes in Authorization header, not URL
 AAI_WS_URL = "wss://streaming.assemblyai.com/v3/ws?speech_model=universal-3-5-pro&sample_rate=16000"
@@ -25,23 +25,28 @@ async def index():
     return FileResponse("static/index.html")
 
 
-@app.get("/api/lead")
-async def lead_info():
-    """Frontend fetches this on page load to display upcoming showing."""
-    lead = await get_next_showing()
-    if not lead:
-        return {"error": "No upcoming showings found"}
-    return lead
+@app.get("/api/leads")
+async def leads_list():
+    """Frontend fetches this on page load to show the selectable lead list."""
+    leads = await get_leads()
+    if not leads:
+        return []
+    return leads
 
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
 
-    # Fetch lead context
-    lead = await get_next_showing()
+    # Client sends the selected lead as first message
+    try:
+        first = await asyncio.wait_for(websocket.receive_json(), timeout=10)
+        lead = first.get("lead")
+    except Exception:
+        lead = None
+
     if not lead:
-        await websocket.send_json({"type": "error", "message": "No upcoming showings found."})
+        await websocket.send_json({"type": "error", "message": "No lead selected."})
         await websocket.close()
         return
 
