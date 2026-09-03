@@ -16,7 +16,7 @@ async def get_next_showing() -> dict | None:
     """
     today = date.today().isoformat()
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=15) as client:
         # First try: Viewing Booked + today's date (case-insensitive status match)
         formula = f"AND(SEARCH('viewing booked', LOWER({{Status}})), IS_SAME({{Viewing Date}}, '{today}', 'day'))"
         resp = await client.get(
